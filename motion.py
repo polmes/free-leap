@@ -75,14 +75,15 @@ class FreeController(threading.Thread):
 			FreeCAD.Gui.updateGui()
 			time.sleep(DELAY)
 
-if __name__ == "__main__":
-	try:
-		FreeCAD.t.stop()
-	except:
-		pass
-		
+def freeStartup():
 	FreeCAD.t = FreeController()
 	FreeCAD.t.start()
 
-	print("It should be running now")
-	print(threading.enumerate())
+if __name__ == "__main__":
+	if not hasattr(FreeCAD, 't') or not FreeCAD.t.running:
+		FreeCAD.t = FreeController()
+		FreeCAD.t.start()
+		FreeCAD.Console.PrintMessage("Started LEAP Motion gesture reconition")
+	else:
+		FreeCAD.t.stop()
+		FreeCAD.Console.PrintMessage("Stopped LEAP Motion gesture reconition")
