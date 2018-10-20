@@ -40,10 +40,14 @@ class FreeController(threading.Thread):
 			frame = controller.frame()
 
 			if frame.id > prev.id:
-				if len(frame.hands) == 1: # we need a hand
+				if len(frame.hands) > 0: # we need a hand
 					hand = frame.hands[0]
-
-					print(hand.grab_strength)
+					if len(frame.hands) > 1:
+						for h in frame.hands:
+							if h.is_left:
+								if h.id < hand.id: hand = h
+							else: # is_right
+								if hand.is_right and h.id < hand.id: hand = h
 
 					if hand.grab_strength > STRENGTH:
 						if first:
