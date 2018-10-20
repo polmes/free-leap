@@ -2,7 +2,6 @@ import Leap
 import sys
 import threading
 import time
-# import numpy as np
 from pivy import coin
 import FreeCAD # pylint: disable = E0401
 
@@ -27,57 +26,53 @@ class FreeController(threading.Thread):
 	def main(self):
 		controller = Leap.Controller()
 
-		currentOrientation = FreeCAD.Gui.ActiveDocument.ActiveView.getCameraNode().orientation.getValue().getValue()
-		prevID = 0
-		isFirst = True
-		# firstFrame = []
-		d1 = []
-		n1 = []
+		# Current orientation
+		r0 = FreeCAD.Gui.ActiveDocument.ActiveView.getCameraNode().orientation.getValue().getValue()
+
+		# Initial variables
+		prev = controller.frame()
+		first = True
+
+		# Loop
 		while self.running:
 			frame = controller.frame()
 
-			if frame.id != prevID:
-				if len(frame.hands) == 1:
-					print("1 hand")
+			if frame.id > prev.id:
+				if len(frame.hands) == 1: # only accept 1 hand
 					hand = frame.hands[0]
 
-					if isFirst:
-						isFirst = False
-						# firstFrame = frame
+					if first:
+						first = False
+
+						# Basis 1
 						d1 = FreeCAD.Vector(hand.direction)
 						n1 = FreeCAD.Vector(hand.palm_normal)
 					else:
+						# Basis 2
 						d2 = FreeCAD.Vector(hand.direction)
 						n2 = FreeCAD.Vector(hand.palm_normal)
 						
+						# Rotation
 						r1 = FreeCAD.Rotation(d1, d2)
 						nt = r1.multVec(n1)
 						r2 = FreeCAD.Rotation(nt, n2)
 						rt = r2.multiply(r1).inverted()
-
-						print("rt = " + str(rt))
-						print("cO = " + str(currentOrientation))
-
-						# print(direction)
-						# print(normal)
-						# print("dot: " + str(direction.dot(normal)))
 						
 						# FreeCAD
-						# FreeCAD.Gui.activeView().setCameraOrientation(rt)
-						FreeCAD.Gui.ActiveDocument.ActiveView.getCameraNode().orientation = coin.SbRotation(rt.Q) * coin.SbRotation(currentOrientation)
+						FreeCAD.Gui.ActiveDocument.ActiveView.getCameraNode().orientation = coin.SbRotation(rt.Q) * coin.SbRotation(r0)
 						# FreeCAD.Gui.SendMsgToActiveView("ViewFit") 
 				else:
-					if not isFirst: # isFirst == False
-						isFirst = True
-						currentOrientation = FreeCAD.Gui.ActiveDocument.ActiveView.getCameraNode().orientation.getValue().getValue()
+					if not first: # first == False
+						first = True
+						r0 = FreeCAD.Gui.ActiveDocument.ActiveView.getCameraNode().orientation.getValue().getValue()
 						FreeCAD.Gui.SendMsgToActiveView("ViewFit")
 
+			# Update variables
+			prev = frame
+
+			# Refresh UI
 			FreeCAD.Gui.updateGui()
 			time.sleep(DELAY)
-
-def freeStartup():
-	FreeCAD.t = FreeController()
-	FreeCAD.t.start()
 
 if __name__ == "__main__":
 	if not hasattr(FreeCAD, 't') or not FreeCAD.t.running:
