@@ -78,7 +78,7 @@ if __name__ == "__main__":
 	if not hasattr(FreeCAD, 't') or not FreeCAD.t.running:
 		FreeCAD.t = FreeController()
 		FreeCAD.t.start()
-		FreeCAD.Console.PrintMessage("Started LEAP Motion gesture reconition")
+		FreeCAD.Console.PrintMessage("Started LEAP Motion gesture reconition\n")
 	else:
 		FreeCAD.t.stop()
-		FreeCAD.Console.PrintMessage("Stopped LEAP Motion gesture reconition")
+		FreeCAD.Console.PrintMessage("Stopped LEAP Motion gesture reconition\n")
