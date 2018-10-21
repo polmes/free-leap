@@ -2,15 +2,26 @@ import Leap
 import sys
 import threading
 import time
+import math
 from pivy import coin
 import FreeCAD # pylint: disable = E0401
 
 # Constants
 DELAY = 0.1 # [s]
 STRENGTH = 0.34 # [0-1]
+HISPEED = 999 # [mm/s]
+OFFSET = 5 # [units]
 # YOLO = 0.5 # scale factor
-# NEAR = 0.1
-# FAR = 100
+# NEAR = 0.1 # ~1
+# FAR = 100 # ~10
+
+class FixedVector(Leap.Vector):
+	def __init__(self, val):
+		self.mag = val[0] ** 2 + val[1] ** 2 + val[2] ** 2
+		super(FixedVector, self).__init__()
+
+	def magnitude(self):
+		return math.sqrt(self.mag)
 
 class FreeController(threading.Thread):
 	def __init__(self):
@@ -38,6 +49,8 @@ class FreeController(threading.Thread):
 		first = True
 		rt = []
 		# pt = []
+		clip = coin.SoClipPlane()
+		clipping = False
 
 		# Loop
 		while self.running:
@@ -100,6 +113,20 @@ class FreeController(threading.Thread):
 						if not first: # first == False
 							first = True
 							FreeCAD.Gui.SendMsgToActiveView("ViewFit")
+						
+						if FixedVector(hand.palm_velocity).magnitude() > HISPEED:
+							# Fruit Ninja Mode
+							if not clipping:
+								print("Caution: Entering Fruit Ninja Mode")
+								r0 = FreeCAD.Gui.activeView().getCameraNode().orientation.getValue().getValue()
+								direction = coin.SbRotation(r0).multVec(coin.SbVec3f(hand.palm_normal.to_tuple()))
+								clip.plane.setValue(coin.SbPlane(direction, OFFSET)) #  set this to control the clipping plane
+								FreeCAD.Gui.activeView().getSceneGraph().insertChild(clip, 0)
+								clipping = True
+							else:
+								print("Back to Safety")
+								FreeCAD.Gui.activeView().getSceneGraph().removeChild(clip)
+								clipping = False
 				else:
 					if not first: # first == False
 						first = True
@@ -111,6 +138,8 @@ class FreeController(threading.Thread):
 			# Refresh UI
 			FreeCAD.Gui.updateGui()
 			time.sleep(DELAY)
+
+		FreeCAD.Gui.activeView().getSceneGraph().removeChild(clip)
 
 if __name__ == "__main__":
 	if not hasattr(FreeCAD, 't') or not FreeCAD.t.running:
