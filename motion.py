@@ -8,9 +8,9 @@ import FreeCAD # pylint: disable = E0401
 # Constants
 DELAY = 0.1 # [s]
 STRENGTH = 0.34 # [0-1]
-YOLO = 0.5 # scale factor
-NEAR = 0.1
-FAR = 100
+# YOLO = 0.5 # scale factor
+# NEAR = 0.1
+# FAR = 100
 
 class FreeController(threading.Thread):
 	def __init__(self):
@@ -37,7 +37,7 @@ class FreeController(threading.Thread):
 		prev = controller.frame()
 		first = True
 		rt = []
-		pt = []
+		# pt = []
 
 		# Loop
 		while self.running:
@@ -58,21 +58,21 @@ class FreeController(threading.Thread):
 							# Init
 							first = False
 							r0 = FreeCAD.Gui.activeView().getCameraNode().orientation.getValue().getValue()
-							p0 = FreeCAD.Gui.activeView().getCameraNode().position.getValue().getValue()
+							# p0 = FreeCAD.Gui.activeView().getCameraNode().position.getValue().getValue()
 
 							# Basis 1
 							d1 = FreeCAD.Vector(hand.direction)
 							n1 = FreeCAD.Vector(hand.palm_normal)
-							p1 = FreeCAD.Vector(hand.palm_position)
+							# p1 = FreeCAD.Vector(hand.palm_position)
 						else:
 							# Basis 2
 							d2 = FreeCAD.Vector(hand.direction)
 							n2 = FreeCAD.Vector(hand.palm_normal)
-							p2 = FreeCAD.Vector(hand.palm_position)
+							# p2 = FreeCAD.Vector(hand.palm_position)
 
 							# Previous
 							rt0 = rt
-							pt0 = pt
+							# pt0 = pt
 							
 							# Rotation
 							r1 = FreeCAD.Rotation(d1, d2)
@@ -82,15 +82,15 @@ class FreeController(threading.Thread):
 							rt = rtni.inverted()
 
 							# Translation
-							pt = FreeCAD.Vector(p0) - YOLO * FreeCAD.Rotation(r0[0],r0[1],r0[2],r0[3]).multiply(rt).multVec(p2 - p1)
+							# pt = FreeCAD.Vector(p0) - YOLO * FreeCAD.Rotation(r0[0],r0[1],r0[2],r0[3]).multiply(rt).multVec(p2 - p1)
 
 							# Filter noise
 							try:
 								rtf = coin.SbRotation.slerp(rt0, rt, 0.5)
-								ptf = 1/2 * (pt0 + pt)
+								# ptf = 1/2 * (pt0 + pt)
 							except:
 								rtf = rt
-								ptf = pt
+								# ptf = pt
 							
 							# FreeCAD
 							FreeCAD.Gui.activeView().getCameraNode().orientation = coin.SbRotation(rtf.Q) * coin.SbRotation(r0)
