@@ -6,8 +6,11 @@ from pivy import coin
 import FreeCAD # pylint: disable = E0401
 
 # Constants
-DELAY = 0.1
-STRENGTH = 0.34
+DELAY = 0.1 # [s]
+STRENGTH = 0.34 # [0-1]
+YOLO = 0.5 # scale factor
+NEAR = 0.1
+FAR = 100
 
 class FreeController(threading.Thread):
 	def __init__(self):
@@ -28,12 +31,13 @@ class FreeController(threading.Thread):
 		controller = Leap.Controller()
 
 		# Current orientation
-		r0 = FreeCAD.Gui.ActiveDocument.ActiveView.getCameraNode().orientation.getValue().getValue()
+		r0 = FreeCAD.Gui.activeView().getCameraNode().orientation.getValue().getValue()
 
 		# Initial variables
 		prev = controller.frame()
 		first = True
 		rt = []
+		pt = []
 
 		# Loop
 		while self.running:
@@ -51,43 +55,54 @@ class FreeController(threading.Thread):
 
 					if hand.grab_strength > STRENGTH:
 						if first:
+							# Init
 							first = False
+							r0 = FreeCAD.Gui.activeView().getCameraNode().orientation.getValue().getValue()
+							p0 = FreeCAD.Gui.activeView().getCameraNode().position.getValue().getValue()
 
 							# Basis 1
 							d1 = FreeCAD.Vector(hand.direction)
 							n1 = FreeCAD.Vector(hand.palm_normal)
+							p1 = FreeCAD.Vector(hand.palm_position)
 						else:
 							# Basis 2
 							d2 = FreeCAD.Vector(hand.direction)
 							n2 = FreeCAD.Vector(hand.palm_normal)
+							p2 = FreeCAD.Vector(hand.palm_position)
 
 							# Previous
 							rt0 = rt
+							pt0 = pt
 							
 							# Rotation
 							r1 = FreeCAD.Rotation(d1, d2)
 							nt = r1.multVec(n1)
 							r2 = FreeCAD.Rotation(nt, n2)
-							rt = r2.multiply(r1).inverted()
+							rtni = r2.multiply(r1)
+							rt = rtni.inverted()
+
+							# Translation
+							pt = FreeCAD.Vector(p0) - YOLO * FreeCAD.Rotation(r0[0],r0[1],r0[2],r0[3]).multiply(rt).multVec(p2 - p1)
 
 							# Filter noise
 							try:
 								rtf = coin.SbRotation.slerp(rt0, rt, 0.5)
+								ptf = 1/2 * (pt0 + pt)
 							except:
 								rtf = rt
+								ptf = pt
 							
 							# FreeCAD
-							FreeCAD.Gui.ActiveDocument.ActiveView.getCameraNode().orientation = coin.SbRotation(rtf.Q) * coin.SbRotation(r0)
+							FreeCAD.Gui.activeView().getCameraNode().orientation = coin.SbRotation(rtf.Q) * coin.SbRotation(r0)
+							# FreeCAD.Gui.activeView().getCameraNode().position = coin.SbVec3f(ptf)
 							# FreeCAD.Gui.SendMsgToActiveView("ViewFit") 
 					else:
 						if not first: # first == False
 							first = True
-							r0 = FreeCAD.Gui.ActiveDocument.ActiveView.getCameraNode().orientation.getValue().getValue()
 							FreeCAD.Gui.SendMsgToActiveView("ViewFit")
 				else:
 					if not first: # first == False
 						first = True
-						r0 = FreeCAD.Gui.ActiveDocument.ActiveView.getCameraNode().orientation.getValue().getValue()
 						FreeCAD.Gui.SendMsgToActiveView("ViewFit")
 
 			# Update variables
@@ -104,5 +119,7 @@ if __name__ == "__main__":
 		FreeCAD.Console.PrintMessage("Started LEAP Motion gesture reconition\n")
 	else:
 		FreeCAD.Gui.SendMsgToActiveView("ViewFit")
+		# FreeCAD.Gui.activeView().getCameraNode().nearDistance = NEAR;
+		# FreeCAD.Gui.activeView().getCameraNode().farDistance = FAR;
 		FreeCAD.t.stop()
 		FreeCAD.Console.PrintMessage("Stopped LEAP Motion gesture reconition\n")
