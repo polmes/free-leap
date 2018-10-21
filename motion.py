@@ -117,14 +117,14 @@ class FreeController(threading.Thread):
 						if FixedVector(hand.palm_velocity).magnitude() > HISPEED:
 							# Fruit Ninja Mode
 							if not clipping:
-								print("Caution: Entering Fruit Ninja Mode")
+								FreeCAD.Console.PrintMessage("Caution: Entering Fruit Ninja Mode")
 								r0 = FreeCAD.Gui.activeView().getCameraNode().orientation.getValue().getValue()
 								direction = coin.SbRotation(r0).multVec(coin.SbVec3f(hand.palm_normal.to_tuple()))
 								clip.plane.setValue(coin.SbPlane(direction, OFFSET)) #  set this to control the clipping plane
 								FreeCAD.Gui.activeView().getSceneGraph().insertChild(clip, 0)
 								clipping = True
 							else:
-								print("Back to Safety")
+								FreeCAD.Console.PrintMessage("Back to Safety")
 								FreeCAD.Gui.activeView().getSceneGraph().removeChild(clip)
 								clipping = False
 				else:
