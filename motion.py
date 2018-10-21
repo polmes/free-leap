@@ -11,6 +11,7 @@ DELAY = 0.1 # [s]
 STRENGTH = 0.34 # [0-1]
 HISPEED = 999 # [mm/s]
 OFFSET = 5 # [units]
+WEAKNESS = 0.1
 # YOLO = 0.5 # scale factor
 # NEAR = 0.1 # ~1
 # FAR = 100 # ~10
@@ -114,19 +115,23 @@ class FreeController(threading.Thread):
 							first = True
 							FreeCAD.Gui.SendMsgToActiveView("ViewFit")
 						
-						if FixedVector(hand.palm_velocity).magnitude() > HISPEED:
+						if FixedVector(hand.palm_velocity).magnitude() > HISPEED and hand.grab_strength < WEAKNESS:
 							# Fruit Ninja Mode
 							if not clipping:
-								FreeCAD.Console.PrintMessage("Caution: Entering Fruit Ninja Mode")
+								FreeCAD.Console.PrintMessage("Caution: Entering Fruit Ninja Mode\n")
 								r0 = FreeCAD.Gui.activeView().getCameraNode().orientation.getValue().getValue()
 								direction = coin.SbRotation(r0).multVec(coin.SbVec3f(hand.palm_normal.to_tuple()))
 								clip.plane.setValue(coin.SbPlane(direction, OFFSET)) #  set this to control the clipping plane
 								FreeCAD.Gui.activeView().getSceneGraph().insertChild(clip, 0)
+
 								clipping = True
 							else:
-								FreeCAD.Console.PrintMessage("Back to Safety")
+								FreeCAD.Console.PrintMessage("Back to Safety\n")
 								FreeCAD.Gui.activeView().getSceneGraph().removeChild(clip)
+
 								clipping = False
+							
+							time.sleep(4 * DELAY)
 				else:
 					if not first: # first == False
 						first = True
