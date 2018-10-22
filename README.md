@@ -4,7 +4,8 @@
 
 Implements hand gestures to manipulate the 3D view in FreeCAD using the LEAP Motion controller.
 
-![Using FreeCAD](https://media.giphy.com/media/4N03JF3dn5HTVRDGSF/giphy.gif)
+![3D Navigation](https://media.giphy.com/media/4N03JF3dn5HTVRDGSF/giphy.gif)
+![Clipping Plane](https://media.giphy.com/media/5YbVf8glkr4flHbJuF/giphy.gif)
 
 ## Inspiration
 
